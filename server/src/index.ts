@@ -17,20 +17,18 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security Middleware
-app.use(helmet());
-const configuredClientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.trim().replace(/\/+$/, '') : '*';
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || configuredClientUrl === '*') return callback(null, true);
-      const cleanOrigin = origin.replace(/\/+$/, '');
-      if (cleanOrigin === configuredClientUrl || cleanOrigin.endsWith('.vercel.app')) {
-        return callback(null, true);
-      }
-      return callback(null, false);
-    },
+    origin: true,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 app.use(express.json({ limit: '1mb' }));
