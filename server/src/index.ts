@@ -18,9 +18,18 @@ const PORT = process.env.PORT || 5000;
 
 // Security Middleware
 app.use(helmet());
+const configuredClientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.trim().replace(/\/+$/, '') : '*';
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: (origin, callback) => {
+      if (!origin || configuredClientUrl === '*') return callback(null, true);
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (cleanOrigin === configuredClientUrl || cleanOrigin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true,
   })
 );
