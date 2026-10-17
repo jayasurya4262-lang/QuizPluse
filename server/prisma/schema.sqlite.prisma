@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String              @id @default(uuid())
+  email        String              @unique
+  password     String
+  name         String
+  role         String              @default("STUDENT") // "STUDENT" | "TEACHER"
+  avatarUrl    String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  quizzes      Quiz[]              @relation("TeacherQuizzes")
+  attempts     QuizAttempt[]       @relation("StudentAttempts")
+  resetTokens  PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model Quiz {
+  id               String        @id @default(uuid())
+  title            String
+  description      String?
+  topic            String        @default("General")
+  durationMinutes  Int           @default(15)
+  passingScore     Int?          // percentage e.g. 60
+  status           String        @default("DRAFT") // "DRAFT" | "PUBLISHED" | "ARCHIVED"
+  shuffleQuestions Boolean       @default(false)
+  teacherId        String
+  teacher          User          @relation("TeacherQuizzes", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  questions        Question[]
+  attempts         QuizAttempt[]
+
+  @@index([teacherId])
+  @@index([status])
+}
+
+model Question {
+  id             String           @id @default(uuid())
+  quizId         String
+  quiz           Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  type           String           @default("MCQ") // "MCQ" | "SHORT_ANSWER"
+  text           String
+  orderIndex     Int              @default(0)
+  marks          Int              @default(1)
+  explanation    String?
+  expectedAnswer String?          // For SHORT_ANSWER
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  options        QuestionOption[]
+  answers        AttemptAnswer[]
+
+  @@index([quizId])
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  orderIndex Int      @default(0)
+
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id              String          @id @default(uuid())
+  quizId          String
+  quiz            Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User            @relation("StudentAttempts", fields: [studentId], references: [id], onDelete: Cascade)
+  status          String          @default("IN_PROGRESS") // "IN_PROGRESS" | "SUBMITTED" | "EXPIRED"
+  startedAt       DateTime        @default(now())
+  deadline        DateTime
+  submittedAt     DateTime?
+  score           Float?
+  totalMarks      Float?
+  percentage      Float?
+  passed          Boolean?
+  correctCount    Int?
+  incorrectCount  Int?
+  unansweredCount Int?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  answers         AttemptAnswer[]
+
+  @@index([quizId])
+  @@index([studentId])
+}
+
+model AttemptAnswer {
+  id               String          @id @default(uuid())
+  attemptId        String
+  attempt          QuizAttempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId String?
+  textAnswer       String?
+  isCorrect        Boolean?
+  marksAwarded     Float?
+  savedAt          DateTime        @default(now())
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}

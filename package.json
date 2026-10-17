@@ -1,0 +1,20 @@
+{
+  "name": "online-quiz-application",
+  "version": "1.0.0",
+  "description": "Enterprise Online Quiz Application - Jira TRIAL Epic Suite",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "test": "npm --prefix server run test",
+    "seed": "npm --prefix server run seed",
+    "db:push": "npm --prefix server run db:push",
+    "db:generate": "npm --prefix server run db:generate",
+    "postinstall": "npm --prefix server install && npm --prefix client install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
